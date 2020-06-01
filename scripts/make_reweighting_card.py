@@ -1,3 +1,10 @@
+import argparse
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--include-zzzz-operators', action='store_true')
+
+args = parser.parse_args()
+
 parameters_with_lhacode = {
     "FS0": 1,
     "FS1": 2,
@@ -49,7 +56,32 @@ def make_reweighting_commands(value_dict):
         value = 0.0
         if name in value_dict:
             value = float(value_dict[name])
-        print(f"anoinputs {lhacode} {value}e-12 # {name}")
+        print(f"set anoinputs {lhacode} {value}e-12 # {name}")
+
+
+def accept(values):
+    n_nonzero = len(values) - values.count(0)
+
+    # We don't need to have more than two operators != zeros,
+    # because there is no intereference between more than two
+    # operators
+    if n_nonzero > 2:
+        return False
+
+    # It's also not necessary to have negative operator values
+    # in case two operators are non-zero.  We need these points
+    # only for the interference term and one sample per
+    # operator pair is enough, so we might as well choose the
+    # positive quadrant.
+    if n_nonzero == 2:
+        if any([x < 0 for x in values]):
+            return False
+
+    # We could reduce the grid more, but it's good to have some
+    # redundancy for cross checks and to avoid the situation
+    # where the choice of the grid causes numerical
+    # instabilites.
+    return True
 
 
 # We start with an n-dimensional grid of these values for each operator, plus
@@ -68,37 +100,27 @@ print("change rwgt_dir rwgt")
 print("")
 
 i_reweight = 0
-for ft0 in values:
-    for ft1 in values:
-        for ft2 in values:
-            for ft8 in values:
-                for ft9 in values:
-                    value_dict = {"FT0": ft0, "FT1": ft1, "FT2": ft2, "FT8": ft8, "FT9": ft9}
-                    current_values = list(value_dict.values())
 
-                    n_nonzero = len(current_values) - current_values.count(0)
+if args.include_zzzz_operators:
+    for ft0 in values:
+        for ft1 in values:
+            for ft2 in values:
+                for ft8 in values:
+                    for ft9 in values:
+                        value_dict = {"FT0": ft0, "FT1": ft1, "FT2": ft2, "FT8": ft8, "FT9": ft9}
 
-                    # We don't need to have more than two operators != zeros,
-                    # because there is no intereference between more than two
-                    # operators
-                    if n_nonzero > 2:
-                        continue
+                        if accept(list(value_dict.values())):
+                            i_reweight += 1
 
-                    # It's also not necessary to have negative operator values
-                    # in case two operators are non-zero.  We need these points
-                    # only for the interference term and one sample per
-                    # operator pair is enough, so we might as well choose the
-                    # positive quadrant.
-                    if n_nonzero == 2:
-                        if any([x < 0 for x in current_values]):
-                            continue
+                            make_reweighting_commands(value_dict)
+                            print("")
+else:
+    for ft0 in values:
+        for ft1 in values:
+            for ft2 in values:
+                value_dict = {"FT0": ft0, "FT1": ft1, "FT2": ft2}
 
-                    # We could reduce the grid more, but it's good to have some
-                    # redundancy for cross checks and to avoid the situation
-                    # where the choice of the grid causes numerical
-                    # instabilites.
-
-                    # End up with 121 reweighting points.
+                if accept(list(value_dict.values())):
                     i_reweight += 1
 
                     make_reweighting_commands(value_dict)
