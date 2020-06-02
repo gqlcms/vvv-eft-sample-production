@@ -45,3 +45,4 @@ Tools, scripts and documentation to generate VVV samples for triboson analysis.
 * **Reweighting** 1 million events for one new point in operator space **takes 30 minutes**!
   Be careful to not have a too large grid.
 * Don't run two instances of madgraph in the same directory when doing the reweightig! The first instance creates a temp directory `rwgt` which the others also try to read. The others will then crash.
+* It seems the compiling step for MadSpin takes very very long when W-Bosons are in the final state. Avoid doing this for checks  of small sample size
