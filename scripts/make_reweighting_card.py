@@ -78,7 +78,7 @@ class ReweightingInfo(object):
 
         if descr == "":
             descr = "Standard Model"
-            label = "EFT_SM"
+            label = "SM"
 
         text = [f"launch --rwgt_name=EFT__{label}"]
 
