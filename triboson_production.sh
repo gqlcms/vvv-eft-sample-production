@@ -19,7 +19,7 @@ large scale production to save space.
 
 PILEUP_FILES needs to be a file in which the the pileup files are listed, separated by newlines.
 You can get this list with the dasgoclient:
-    dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW" > pileup_files.out'
+    dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW" > pileup_files.txt'
         exit 0
         ;;
     y)  YEAR=$OPTARG
@@ -118,7 +118,7 @@ OUTNAME=$SAMPLE-${CAMPAIGN}wmLHEGS
 RUN_GENERIC_TARBALL_PATCH=run_generic_tarball_cvmfs-keep_lhe.patch
 
 #OUTPUT_DIR=${SAMPLE}_${YEAR}_GEN-SIM_0001
-mkdir $OUTPUT_DIR
+mkdir -p $OUTPUT_DIR
 cd $OUTPUT_DIR
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
