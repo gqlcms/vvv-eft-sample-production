@@ -88,7 +88,7 @@ FRAGMENT_BASE_URL=https://rembserj.web.cern.ch/rembserj/genproduction/fragments
 GRIDPACK_BASE_URL=https://rembserj.web.cern.ch/rembserj/genproduction/gridpacks
 
 FRAGMENT=wmLHEGS-fragment-${YEAR}.py
-GRIDPACK=${SAMPLE}_20200602_slc7_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz
+GRIDPACK=${SAMPLE}_20200605_slc7_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz
 
 OUTNAME=$SAMPLE-${CAMPAIGN}wmLHEGS
 

@@ -186,6 +186,8 @@ cmsRun ${STEP2_NAME}_cfg.py
 cmsRun ${STEP3_NAME}_cfg.py
 cmsRun ${STEP4_NAME}_cfg.py
 
+# The full event after the premixig before recuding it to AOD is too large and too easy to recalculate to justify saving it
+rm ${STEP1_NAME}.root
+
 # cleanup
 rm -rf $CMSSW_VERSION
-#rm *_cfg.py
