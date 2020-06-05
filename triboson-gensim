@@ -61,6 +61,7 @@ case "$YEAR" in
 2018)  echo "The year is $YEAR"
     CONDITIONS=102X_upgrade2018_realistic_v20 \
     BEAMSPOT=Realistic25ns13TeVEarly2018Collision \
+    CAMPAIGN=RunIIAutumn18
     ;;
 *) echo "Year $YEAR is not valid, did you forget to specify it with the -y option?"
    exit 1
@@ -89,7 +90,7 @@ GRIDPACK_BASE_URL=https://rembserj.web.cern.ch/rembserj/genproduction/gridpacks
 FRAGMENT=wmLHEGS-fragment-${YEAR}.py
 GRIDPACK=${SAMPLE}_20200602_slc7_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz
 
-OUTNAME=$SAMPLE-$YEAR-wmLHEGS
+OUTNAME=$SAMPLE-${CAMPAIGN}wmLHEGS
 
 # RUN_GENERIC_TARBALL_PATCH=run_generic_tarball_cvmfs.patch
 # Alternative version of the patch which also makes the production not delete the LHE files
@@ -167,4 +168,5 @@ gzip $OUTNAME.lhe
 # cleanup
 rm -rf lheevent
 rm -rf $CMSSW_VERSION
+#rm *_cfg.py
 rm -rf $GRIDPACK
