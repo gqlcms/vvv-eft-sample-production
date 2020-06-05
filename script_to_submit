@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cd /grid_mnt/vol__vol_U__u/llr/cms/rembser/tmp
+PILEUP_FILES_FILE=/grid_mnt/vol__vol_U__u/llr/cms/rembser/bin/pileup_files.txt
+
+sh /grid_mnt/vol__vol_U__u/llr/cms/rembser/bin/triboson-production -p $PILEUP_FILES_FILE -s WWW_dim8 -c -o test_t3_production -n 10

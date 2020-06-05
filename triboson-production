@@ -28,7 +28,7 @@ You can get this list with the dasgoclient:
     s)  SAMPLE=$OPTARG
         # e.g. WWW_dim8, WZZ_dim8, WWZ_dim8 or ZZZ_dim8
         ;;
-    p)  PILEUP_FILES=pileup_files.txt
+    p)  PILEUP_FILES=$OPTARG
         ;;
     d)  DRY_RUN=1
         # cleanup temporary files in the end, recommended for large scale production
@@ -59,7 +59,7 @@ else
     exit 1
 fi
 
-PILEUP_INPUT=$(shuf -n 2 pileup_files.txt | tr '\n' ',')
+PILEUP_INPUT=$(shuf -n 2 $PILEUP_FILES | tr '\n' ',')
 
 case "$YEAR" in
 
