@@ -60,6 +60,14 @@ else
 fi
 
 PILEUP_INPUT=$(shuf -n 2 $PILEUP_FILES | tr '\n' ',')
+PILEUP_INPUT=${PILEUP_INPUT::-1}
+
+if [[ "$PILEUP_INPUT" = *?.root ]]; then
+    echo "Pileup input looks OK"
+else
+    echo "Something unexpected happened with the pileup input!"
+    exit 1
+fi
 
 case "$YEAR" in
 
@@ -262,22 +270,22 @@ then
 fi
 
 cmsRun ${STEP0_NAME}_cfg.py || exit $? ;
+
+rm -rf lheevent
+# Get out LHE files out of temporary directory, so we can check them out if the want
+mv lheevent/cmsgrid_final.lhe $OUTNAME.lhe
+gzip $OUTNAME.lhe
+rm -rf $GRIDPACK
+
 cmsRun ${STEP1_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP2_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP3_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP4_NAME}_cfg.py || exit $? ;
-
-# Get out LHE files out of temporary directory, so we can check them out if the want
-mv lheevent/cmsgrid_final.lhe $OUTNAME.lhe
-gzip $OUTNAME.lhe
 
 # cleanup temporary working directories
 if [ "$CLEANUP" ]
 then
     # The full event after the premixig before recuding it to AOD is too large and too easy to recalculate to justify saving it
     rm ${STEP1_NAME}.root
-
-    rm -rf $GRIDPACK
-    rm -rf lheevent
     rm -rf $CMSSW_VERSION
 fi
