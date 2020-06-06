@@ -5,6 +5,7 @@ OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
 # Initialize our own variables:
 YEAR=2018
+NTHREADS=8
 
 while getopts "h?y:s:n:o:dcp:" opt; do
     case "$opt" in
@@ -163,8 +164,6 @@ sed -i "s/\$GRIDPACK/$PWDESC\/$GRIDPACK/g" $CMSSW_VERSION/src/Configuration/GenP
 curl -s --insecure $GRIDPACK_BASE_URL/$GRIDPACK --retry 2 --create-dirs -o $GRIDPACK
 [ -s $GRIDPACK ] || exit $?;
 
-NTHREADS=1
-
 
 STEP0_NAME=${SAMPLE}-${CAMPAIGN}wmLHEGS
 STEP1_NAME=${SAMPLE}-${CAMPAIGN}DRPremix_step1
@@ -182,6 +181,7 @@ cmsDriver.py Configuration/GenProduction/python/$FRAGMENT \
     --beamspot $BEAMSPOT \
     --step LHE,GEN,SIM \
     --geometry DB:Extended \
+    --nThreads $NTHREADS \
     --era $ERA \
     --python_filename ${STEP0_NAME}_cfg.py \
     --no_exec \
