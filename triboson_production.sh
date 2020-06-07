@@ -271,11 +271,11 @@ fi
 
 cmsRun ${STEP0_NAME}_cfg.py || exit $? ;
 
-rm -rf lheevent
 # Get out LHE files out of temporary directory, so we can check them out if the want
 mv lheevent/cmsgrid_final.lhe $OUTNAME.lhe
 gzip $OUTNAME.lhe
 rm -rf $GRIDPACK
+rm -rf lheevent
 
 cmsRun ${STEP1_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP2_NAME}_cfg.py || exit $? ;
