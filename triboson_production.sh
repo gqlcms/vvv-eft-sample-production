@@ -169,7 +169,7 @@ STEP0_NAME=${SAMPLE}-${CAMPAIGN}wmLHEGS
 STEP1_NAME=${SAMPLE}-${CAMPAIGN}DRPremix_step1
 STEP2_NAME=${SAMPLE}-${CAMPAIGN}DRPremix
 STEP3_NAME=${SAMPLE}-${CAMPAIGN}MiniAOD
-STEP4_NAME=${SAMPLE}-${CAMPAIGN}NanoAODv7
+STEP4_NAME=${SAMPLE}-${CAMPAIGN}NanoEDMAODv7
 
 seed=$(($(date +%s)))
 cmsDriver.py Configuration/GenProduction/python/$FRAGMENT \
@@ -246,7 +246,7 @@ cmsDriver.py step1 \
     --filein file:${STEP3_NAME}.root \
     --fileout file:${STEP4_NAME}.root \
     --mc \
-    --eventcontent NANOAODSIM \
+    --eventcontent NANOEDMAODSIM \
     --datatier NANOAODSIM \
     --conditions $CONDITIONS \
     --step NANO \
