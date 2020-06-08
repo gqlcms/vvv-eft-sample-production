@@ -170,6 +170,7 @@ STEP1_NAME=${SAMPLE}-${CAMPAIGN}DRPremix_step1
 STEP2_NAME=${SAMPLE}-${CAMPAIGN}DRPremix
 STEP3_NAME=${SAMPLE}-${CAMPAIGN}MiniAOD
 STEP4_NAME=${SAMPLE}-${CAMPAIGN}NanoEDMAODv7
+STEP5_NAME=${SAMPLE}-${CAMPAIGN}NanoAODv7
 
 seed=$(($(date +%s)))
 cmsDriver.py Configuration/GenProduction/python/$FRAGMENT \
@@ -257,12 +258,28 @@ cmsDriver.py step1 \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     -n $NEVENTS
 
+cmsDriver.py step1 \
+    --filein file:${STEP3_NAME}.root \
+    --fileout file:${STEP5_NAME}.root \
+    --mc \
+    --eventcontent NANOAODSIM \
+    --datatier NANOAODSIM \
+    --conditions $CONDITIONS \
+    --step NANO \
+    --nThreads $NTHREADS \
+    --era $NANOERA \
+    --python_filename ${STEP5_NAME}_cfg.py \
+    --no_exec \
+    --customise Configuration/DataProcessing/Utils.addMonitoring \
+    -n $NEVENTS
+
 # Validate the config files
 python2 ${STEP0_NAME}_cfg.py
 python2 ${STEP1_NAME}_cfg.py
 python2 ${STEP2_NAME}_cfg.py
 python2 ${STEP3_NAME}_cfg.py
 python2 ${STEP4_NAME}_cfg.py
+python2 ${STEP5_NAME}_cfg.py
 
 if [ "$DRY_RUN" ]
 then
@@ -287,5 +304,7 @@ if [ "$CLEANUP" ]
 then
     # The full event after the premixig before recuding it to AOD is too large and too easy to recalculate to justify saving it
     rm ${STEP1_NAME}.root
+
     rm -rf $CMSSW_VERSION
+    rm -rf *_cfg.py
 fi
