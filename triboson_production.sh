@@ -298,6 +298,7 @@ cmsRun ${STEP1_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP2_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP3_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP4_NAME}_cfg.py || exit $? ;
+cmsRun ${STEP5_NAME}_cfg.py || exit $? ;
 
 # cleanup temporary working directories
 if [ "$CLEANUP" ]
