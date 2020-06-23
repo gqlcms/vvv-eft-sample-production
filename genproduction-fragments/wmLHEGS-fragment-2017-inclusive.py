@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 externalLHEProducer = cms.EDProducer(
     "ExternalLHEProducer",
-    args=cms.vstring("$GRIDPACK"),
+    args=cms.vstring(["$GRIDPACK"]),
     nEvents=cms.untracked.uint32(5000),
     numberOfParameters=cms.uint32(1),
     outputFile=cms.string("cmsgrid_final.lhe"),
