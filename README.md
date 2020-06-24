@@ -72,8 +72,17 @@ This step is probably different for LLR and UCSD, but in principle you should ju
 
 For LLR, this can be done with the [submit_jobs_llr.sh](https://github.com/guitargeek/vvv-eft-sample-production/blob/master/submit_jobs_llr.sh) script.
 
-
 **Remember:** if you set the number of events (`-n` flag) to a number higher than 2 times 800, you need to change the production script such that includes more than two random pileup files from the list.
+
+### 5. Merge the NANOEDMAOD files
+
+To avoid overhead when opening many small NanoAOD files, the last step is to merge several NanoEDMAOD into one final NanoAOD file.
+
+A suggestion is to merge the output of 100 jobs (assuming 1000 events per job), resulting in NanoAOD files that are about 200 MB large.
+
+The merging step is very fast and can be done manually in the end by adapting the [nano_merge_step_cfg.py](https://github.com/guitargeek/vvv-eft-sample-production/blob/master/nano_merge_step_cfg.py) config.
+
+The only difference between our merging step and what is done in central production is the disabled event dumplicate check (`duplicateCheckMode = "noDuplicateCheck"`), which we need to do because there is no mechanism in the triboson production script to avoid duplicate run/lumisection/event ID combinations. This would probably be easy to implement if I knew how, but it's also not really an issue.
 
 ## Known issues with the production
 
