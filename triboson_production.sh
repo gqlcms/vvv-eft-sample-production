@@ -6,8 +6,9 @@ OPTIND=1         # Reset in case getopts has been used previously in the shell.
 # Initialize our own variables:
 YEAR=2018
 NTHREADS=8
+FILTER="inclusive"
 
-while getopts "h?y:s:n:o:dcp:" opt; do
+while getopts "h?y:s:n:o:dcp:f:" opt; do
     case "$opt" in
     h|\?)
         echo 'triboson-production -y YEAR -s SAMPLE -n NEVENTS -o OUTPUT_DIR -p PILEUP_FILES [-d -c]
@@ -30,6 +31,9 @@ You can get this list with the dasgoclient:
         # e.g. WWW_dim8, WZZ_dim8, WWZ_dim8 or ZZZ_dim8
         ;;
     p)  PILEUP_FILES=$OPTARG
+        ;;
+    f)  FILTER=$OPTARG
+        # filter should be either "inclusive", "single-lepton" or "double-lepton"
         ;;
     d)  DRY_RUN=1
         # cleanup temporary files in the end, recommended for large scale production
@@ -114,10 +118,10 @@ CMSSW_VERSION=CMSSW_10_2_22
 ERA=Run2_${YEAR}
 NANOERA=$ERA,run2_nanoAOD_102Xv1
 
-FRAGMENT_BASE_URL=https://rembserj.web.cern.ch/rembserj/genproduction/fragments
+FRAGMENT_BASE_URL=https://raw.githubusercontent.com/guitargeek/vvv-eft-sample-production/master/genproduction-fragments
 GRIDPACK_BASE_URL=https://rembserj.web.cern.ch/rembserj/genproduction/gridpacks
 
-FRAGMENT=wmLHEGS-fragment-${YEAR}.py
+FRAGMENT=wmLHEGS-fragment-${YEAR}-${FILTER}.py
 GRIDPACK=${SAMPLE}_20200605_slc7_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz
 
 OUTNAME=$SAMPLE-${CAMPAIGN}wmLHEGS
