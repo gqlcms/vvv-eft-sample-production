@@ -21,7 +21,8 @@ large scale production to save space.
 
 PILEUP_FILES needs to be a file in which the the pileup files are listed, separated by newlines.
 You can get this list with the dasgoclient:
-    dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW" > pileup_files.txt'
+    dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-MCv2_correctPU_94X_mc2017_realistic_v9-v1/GEN-SIM-DIGI-RAW" > pileup_files_2017.txt
+    dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW" > pileup_files_2018.txt'
         exit 0
         ;;
     y)  YEAR=$OPTARG
@@ -81,15 +82,23 @@ case "$YEAR" in
     BEAMSPOT=Realistic50ns13TeVCollision # yes, 50 ns is not correct but this is also used in official 2016 MC productions
     exit 1
     ;;
-2017)  echo "The year $YEAR is not supported!"
+2017)  echo "The year $YEAR"
     CONDITIONS=94X_mc2017_realistic_v17
+    CONDITIONS_FOR_NANO=102X_mc2017_realistic_v8
     BEAMSPOT=Realistic25ns13TeVEarly2017Collision
-    exit 1
+    CAMPAIGN=RunIIFall17
+    ERA=Run2_${YEAR}
+    NANOERA=$ERA,run2_nanoAOD_94XMiniAODv2
+    PREMIX_STEP=DIGI,DATAMIX,L1,DIGI2RAW,HLT:2e34v40
     ;;
 2018)  echo "The year is $YEAR"
     CONDITIONS=102X_upgrade2018_realistic_v20
+    CONDITIONS_FOR_NANO=102X_upgrade2018_realistic_v20
     BEAMSPOT=Realistic25ns13TeVEarly2018Collision
     CAMPAIGN=RunIIAutumn18
+    ERA=Run2_${YEAR}
+    NANOERA=$ERA,run2_nanoAOD_102Xv1
+    PREMIX_STEP=DIGI,DATAMIX,L1,DIGI2RAW,HLT:@relval$YEAR
     ;;
 *) echo "Year $YEAR is not valid, did you forget to specify it with the -y option?"
    exit 1
@@ -114,9 +123,6 @@ fi
 CMSSW_VERSION=CMSSW_10_2_22
 
 # The following part should not be manually configured
-
-ERA=Run2_${YEAR}
-NANOERA=$ERA,run2_nanoAOD_102Xv1
 
 FRAGMENT_BASE_URL=https://raw.githubusercontent.com/guitargeek/vvv-eft-sample-production/master/genproduction-fragments
 GRIDPACK_BASE_URL=https://rembserj.web.cern.ch/rembserj/genproduction/gridpacks
@@ -202,10 +208,10 @@ cmsDriver.py step1 \
     --eventcontent PREMIXRAW \
     --datatier GEN-SIM-RAW \
     --conditions $CONDITIONS \
-    --step DIGI,DATAMIX,L1,DIGI2RAW,HLT:@relval$YEAR \
+    --step $PREMIX_STEP \
     --procModifiers premix_stage2 \
-    --nThreads $NTHREADS \
     --geometry DB:Extended \
+    --nThreads $NTHREADS \
     --datamix PreMix \
     --era $ERA \
     --python_filename ${STEP1_NAME}_cfg.py \
@@ -268,7 +274,7 @@ cmsDriver.py step1 \
     --mc \
     --eventcontent NANOAODSIM \
     --datatier NANOAODSIM \
-    --conditions $CONDITIONS \
+    --conditions $CONDITIONS_FOR_NANO \
     --step NANO \
     --nThreads $NTHREADS \
     --era $NANOERA \
