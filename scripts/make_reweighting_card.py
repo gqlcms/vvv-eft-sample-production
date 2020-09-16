@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 
-parser = argparse.ArgumentParser(description="Process some integers.")
+parser = argparse.ArgumentParser(description="Generate reweighting cards for dim8 EFT studies.")
 parser.add_argument("--wwww", action="store_true")
 parser.add_argument("--zzzz", action="store_true")
 parser.add_argument("--wwzz", action="store_true")
@@ -35,13 +35,13 @@ parameters_with_lhacode = {
 # The information which operator plays a role in which coupling, so we can "prune" them if not needed
 # We don't know where FS2, FT3 and FT4 come into play, to let's pretend they play a role everywhere
 # http://feynrules.irmp.ucl.ac.be/attachment/wiki/AnomalousGaugeCoupling/quartic.pdf
-wwww_operators = {"FS0", "FS1", "FS2", "FM0", "FM1", "FM6", "FM7", "FT0", "FT1", "FT2", "FT3", "FT4"}
+wwww_operators = {"FS0", "FS1", "FM0", "FM1", "FM6", "FM7", "FT0", "FT1", "FT2"}
 wwzz_operators = wwww_operators.union({"FM2", "FM3", "FM4", "FM5", "FT5", "FT6", "FT7"})
 zzzz_operators = wwzz_operators.union({"FT8", "FT9"})
 all_operators = wwww_operators.union(wwzz_operators).union(zzzz_operators)
 
-# Make sure we didn't forget any operators
-assert len(all_operators) == len(parameters_with_lhacode)
+# Make sure we didn't forget any physical operators
+assert len(all_operators) + 3 == len(parameters_with_lhacode)
 
 # The operators which are allowed with the flags from the commandline
 allowed_operators = set()
@@ -134,7 +134,8 @@ def accept(values):
 # We start with an n-dimensional grid of these values for each operator, plus
 # the same values with a minus sign.  Then, we remove most of the points again
 # (see comments in the loop).
-values = [0, 1, 5, 100]
+# values = [0, 1, 5, 100]
+values = [0, 1, 5]
 
 # add negative values
 values = values + [-x for x in values if not x == 0]
@@ -143,30 +144,19 @@ i_reweight = 0
 
 reweightings = []
 
-if args.zzzz:
-    for ft0 in values:
-        for ft1 in values:
-            for ft2 in values:
-                for ft8 in values:
-                    for ft9 in values:
-                        value_dict = {"FT0": ft0, "FT1": ft1, "FT2": ft2, "FT8": ft8, "FT9": ft9}
+# For the 3 most sensitive operators, we like to have a grid
+# so we could also measure correlations
+for ft0 in values:
+    for ft1 in values:
+        for ft2 in values:
+            value_dict = {"FT0": ft0, "FT1": ft1, "FT2": ft2}
 
-                        if accept(list(value_dict.values())):
-                            i_reweight += 1
+            if accept(list(value_dict.values())):
+                i_reweight += 1
 
-                            reweightings.append(ReweightingInfo(value_dict))
-else:
-    for ft0 in values:
-        for ft1 in values:
-            for ft2 in values:
-                value_dict = {"FT0": ft0, "FT1": ft1, "FT2": ft2}
+                reweightings.append(ReweightingInfo(value_dict))
 
-                if accept(list(value_dict.values())):
-                    i_reweight += 1
-
-                    reweightings.append(ReweightingInfo(value_dict))
-
-# We would like to add at least plus/minus 5 for each possible parameter
+# We would like to add at least plus/minus 1 for each possible parameter
 for name in parameters_with_lhacode.keys():
     reweightings.append(ReweightingInfo({name: 1}))
     reweightings.append(ReweightingInfo({name: -1}))

@@ -2,7 +2,12 @@
 
 ## Setup
 
-1. Get a `CMSSW_10_2_22` environment.
+1. 
+   ~~Source ROOT so you can compile Delphes:~~
+   ```
+   ~~source /opt/exp_soft/llr/root/v6.12.06-el7-gcc49/bin/thisroot.sh~~
+   ```
+   Get a `CMSSW_10_2_22` environment.
 
 2. Download Madgraph and quartic coupling model:
    ```bash
@@ -13,6 +18,11 @@
    wget --no-check-certificate https://cms-project-generators.web.cern.ch/cms-project-generators/SM_Ltotal_Ind5v2020v2_UFO.zip
    unzip SM_Ltotal_Ind5v2020v2_UFO.zip
    cd ../..
+   ```
+   You might also want to install Delphes and pythia8 (from the madgraph command prompt):
+   ```
+   install Delphes
+   install pythia8
    ```
 
 3. Generate reweighting card (check out file for description of grid):

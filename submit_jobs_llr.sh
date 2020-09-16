@@ -16,7 +16,7 @@ for ((i=1;i<=END;i++)); do
     echo "#!/bin/bash
 
 cd $OUTPUT_DIR 
-sh triboson_production.sh -p $PILEUP_FILES_FILE -s WWW_dim8 -c -o $OUTPUT_DIR -n 1000" > submit_$OUT_DIR.sh
+sh triboson_production.sh -p $PILEUP_FILES_FILE -s WWZ_dim8_extended -c -o $OUTPUT_DIR -n 1000 -f four-leptons" > submit_$OUT_DIR.sh
 
     t3submit submit_$OUT_DIR.sh
     sleep 1
