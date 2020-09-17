@@ -88,8 +88,10 @@ case "$YEAR" in
     BEAMSPOT=Realistic25ns13TeVEarly2017Collision
     CAMPAIGN=RunIIFall17
     ERA=Run2_${YEAR}
+    MINIERA=$ERA,run2_miniAOD_94XFall17
     NANOERA=$ERA,run2_nanoAOD_94XMiniAODv2
-    PREMIX_STEP=DIGI,DATAMIX,L1,DIGI2RAW,HLT:2e34v40
+    PREMIX_STEP=DIGIPREMIX_S2,DATAMIX,L1,DIGI2RAW,HLT:2e34v40
+    CMSSW_VERSION_FOR_RECO=CMSSW_9_4_17
     ;;
 2018)  echo "The year is $YEAR"
     CONDITIONS=102X_upgrade2018_realistic_v20
@@ -97,8 +99,12 @@ case "$YEAR" in
     BEAMSPOT=Realistic25ns13TeVEarly2018Collision
     CAMPAIGN=RunIIAutumn18
     ERA=Run2_${YEAR}
+    MINIERA=$ERA
     NANOERA=$ERA,run2_nanoAOD_102Xv1
     PREMIX_STEP=DIGI,DATAMIX,L1,DIGI2RAW,HLT:@relval$YEAR
+    PREMIX_ARGS="--procModifiers premix_stage2 --geometry DB:Extended"
+    RECO_ARGS="--procModifiers premix_stage2"
+    CMSSW_VERSION_FOR_RECO=CMSSW_10_2_22
     ;;
 *) echo "Year $YEAR is not valid, did you forget to specify it with the -y option?"
    exit 1
@@ -120,7 +126,7 @@ else
 fi
 
 
-CMSSW_VERSION=CMSSW_10_2_22
+CMSSW_VERSION_FOR_GEN_NANO=CMSSW_10_2_22
 
 # The following part should not be manually configured
 
@@ -141,16 +147,26 @@ mkdir -p $OUTPUT_DIR
 cd $OUTPUT_DIR
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-if [ -r $CMSSW_VERSION/src ] ; then
- echo release $CMSSW_VERSION already exists
+if [ -r $CMSSW_VERSION_FOR_GEN_NANO/src ] ; then
+ echo release $CMSSW_VERSION_FOR_GEN_NANO already exists
 else
-scram p CMSSW $CMSSW_VERSION
+scram p CMSSW $CMSSW_VERSION_FOR_GEN_NANO
 fi
-cd $CMSSW_VERSION/src
+cd $CMSSW_VERSION_FOR_GEN_NANO/src
 eval `scram runtime -sh`
 
 # Patch to have the improved weight producer for NanoAOD
 git cms-merge-topic guitargeek:LHEWeightsTableProducer_10_2_22
+
+scram b -j8
+cd ../../
+
+# checkout cmssw version for reco
+mkdir cmssw_for_reco
+cd cmssw_for_reco
+cmsrel $CMSSW_VERSION_FOR_RECO
+cd $CMSSW_VERSION_FOR_RECO/src
+cmsenv
 
 # It's a bit unfortunate that we have to git cms-init indirectly just to patch one file..
 # Just downloading this one file does not work because the package will be poisoned.
@@ -165,15 +181,14 @@ curl -s --insecure $FRAGMENT_BASE_URL/$FRAGMENT --retry 2 --create-dirs -o Confi
 [ -s Configuration/GenProduction/python/$FRAGMENT ] || exit $?;
 
 scram b -j8
-cd ../../
+cd ../../..
 
 #insert gridpack path info fragment
 PWDESC=$(echo $PWD | sed 's_/_\\/_g')
-sed -i "s/\$GRIDPACK/$PWDESC\/$GRIDPACK/g" $CMSSW_VERSION/src/Configuration/GenProduction/python/$FRAGMENT
+sed -i "s/\$GRIDPACK/$PWDESC\/$GRIDPACK/g" cmssw_for_reco/$CMSSW_VERSION_FOR_RECO/src/Configuration/GenProduction/python/$FRAGMENT
 
 curl -s --insecure $GRIDPACK_BASE_URL/$GRIDPACK --retry 2 --create-dirs -o $GRIDPACK
 [ -s $GRIDPACK ] || exit $?;
-
 
 STEP0_NAME=${SAMPLE}-${CAMPAIGN}wmLHEGS
 STEP1_NAME=${SAMPLE}-${CAMPAIGN}DRPremix_step1
@@ -182,7 +197,7 @@ STEP3_NAME=${SAMPLE}-${CAMPAIGN}MiniAOD
 STEP4_NAME=${SAMPLE}-${CAMPAIGN}NanoEDMAODv7
 STEP5_NAME=${SAMPLE}-${CAMPAIGN}NanoAODv7
 
-seed=$(($(date +%s)))
+seed=$(($(date +%s) % 900000000))
 cmsDriver.py Configuration/GenProduction/python/$FRAGMENT \
     --fileout file:${STEP0_NAME}.root \
     --mc \
@@ -200,6 +215,8 @@ cmsDriver.py Configuration/GenProduction/python/$FRAGMENT \
     --customise_commands process.RandomNumberGeneratorService.externalLHEProducer.initialSeed="int(${seed})" \
     -n $NEVENTS
 
+python2 ${STEP0_NAME}_cfg.py
+
 cmsDriver.py step1 \
     --filein file:${STEP0_NAME}.root \
     --fileout file:${STEP1_NAME}.root \
@@ -209,8 +226,7 @@ cmsDriver.py step1 \
     --datatier GEN-SIM-RAW \
     --conditions $CONDITIONS \
     --step $PREMIX_STEP \
-    --procModifiers premix_stage2 \
-    --geometry DB:Extended \
+    $PREMIX_ARGS \
     --nThreads $NTHREADS \
     --datamix PreMix \
     --era $ERA \
@@ -218,6 +234,8 @@ cmsDriver.py step1 \
     --no_exec \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     -n $NEVENTS
+
+python2 ${STEP1_NAME}_cfg.py
 
 cmsDriver.py step2 \
     --filein file:${STEP1_NAME}.root \
@@ -228,13 +246,15 @@ cmsDriver.py step2 \
     --datatier AODSIM \
     --conditions $CONDITIONS \
     --step RAW2DIGI,L1Reco,RECO,RECOSIM,EI \
-    --procModifiers premix_stage2 \
+    $RECO_ARGS \
     --nThreads $NTHREADS \
     --era $ERA \
     --python_filename ${STEP2_NAME}_cfg.py \
     --no_exec \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     -n $NEVENTS
+
+python2 ${STEP2_NAME}_cfg.py
 
 cmsDriver.py step1 \
     --filein file:${STEP2_NAME}.root \
@@ -247,11 +267,19 @@ cmsDriver.py step1 \
     --step PAT \
     --nThreads $NTHREADS \
     --geometry DB:Extended \
-    --era $ERA \
+    --era $MINIERA \
     --python_filename ${STEP3_NAME}_cfg.py \
     --no_exec \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     -n $NEVENTS
+
+python2 ${STEP3_NAME}_cfg.py
+
+# set gen/nano environment
+cd $CMSSW_VERSION_FOR_GEN_NANO/src
+cmsenv
+cd ../..
+
 
 cmsDriver.py step1 \
     --filein file:${STEP3_NAME}.root \
@@ -267,6 +295,8 @@ cmsDriver.py step1 \
     --no_exec \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     -n $NEVENTS
+
+python2 ${STEP4_NAME}_cfg.py
 
 cmsDriver.py step1 \
     --filein file:${STEP3_NAME}.root \
@@ -284,17 +314,18 @@ cmsDriver.py step1 \
     -n $NEVENTS
 
 # Validate the config files
-python2 ${STEP0_NAME}_cfg.py
-python2 ${STEP1_NAME}_cfg.py
-python2 ${STEP2_NAME}_cfg.py
-python2 ${STEP3_NAME}_cfg.py
-python2 ${STEP4_NAME}_cfg.py
 python2 ${STEP5_NAME}_cfg.py
 
 if [ "$DRY_RUN" ]
 then
       exit 1
 fi
+
+# set again reco environment
+cd cmssw_for_reco/$CMSSW_VERSION_FOR_RECO/src
+cmsenv
+cd ../../..
+
 
 cmsRun ${STEP0_NAME}_cfg.py || exit $? ;
 
@@ -307,6 +338,12 @@ rm -rf lheevent
 cmsRun ${STEP1_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP2_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP3_NAME}_cfg.py || exit $? ;
+
+# set gen/nano environment
+cd $CMSSW_VERSION_FOR_GEN_NANO/src
+cmsenv
+cd ../..
+
 cmsRun ${STEP4_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP5_NAME}_cfg.py || exit $? ;
 
@@ -316,6 +353,7 @@ then
     # The full event after the premixig before recuding it to AOD is too large and too easy to recalculate to justify saving it
     rm ${STEP1_NAME}.root
 
-    rm -rf $CMSSW_VERSION
+    rm -rf $CMSSW_VERSION_FOR_GEN_NANO
+    rm -rf $CMSSW_VERSION_FOR_RECO
     rm -rf *_cfg.py
 fi
