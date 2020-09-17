@@ -21,6 +21,7 @@ large scale production to save space.
 
 PILEUP_FILES needs to be a file in which the the pileup files are listed, separated by newlines.
 You can get this list with the dasgoclient:
+    dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW" > pileup_files_2016.txt
     dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-MCv2_correctPU_94X_mc2017_realistic_v9-v1/GEN-SIM-DIGI-RAW" > pileup_files_2017.txt
     dasgoclient -query="file dataset=/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW" > pileup_files_2018.txt'
         exit 0
@@ -77,13 +78,30 @@ fi
 
 case "$YEAR" in
 
-2016)  echo "The year $YEAR is not supported!"
-    CONDITIONS=80X_mcRun2_asymptotic_2016_TrancheIV_v8
+2016)  echo "The year is $YEAR"
+    CONDITIONS=80X_mcRun2_asymptotic_2016_TrancheIV_v6
+    CONDITIONS_FOR_GEN=$CONDITIONS
+    CONDITIONS_FOR_PREMIX=$CONDITIONS
+    CONDITIONS_FOR_RECO=$CONDITIONS
+    CONDITIONS_FOR_MINI=94X_mcRun2_asymptotic_v3
+    CONDITIONS_FOR_NANO=102X_mcRun2_asymptotic_v8
+    CAMPAIGN=RunIISummer16
+    ERA=Run2_${YEAR}
+    MINIERA=$ERA,run2_miniAOD_80XLegacy
+    NANOERA=$ERA,run2_nanoAOD_94X2016
+    PREMIX_STEP=DIGIPREMIX_S2,DATAMIX,L1,DIGI2RAW,HLT:@frozen2016
+    RECO_STEP=RAW2DIGI,RECO,EI
     BEAMSPOT=Realistic50ns13TeVCollision # yes, 50 ns is not correct but this is also used in official 2016 MC productions
-    exit 1
+    CMSSW_VERSION_FOR_RECO=CMSSW_8_0_21
+    CMSSW_VERSION_FOR_MINI=CMSSW_9_4_17
+    CMSSW_VERSION_FOR_NANO=CMSSW_10_2_22
     ;;
-2017)  echo "The year $YEAR"
+2017)  echo "The year is $YEAR"
     CONDITIONS=94X_mc2017_realistic_v17
+    CONDITIONS_FOR_GEN=$CONDITIONS
+    CONDITIONS_FOR_PREMIX=$CONDITIONS
+    CONDITIONS_FOR_RECO=$CONDITIONS
+    CONDITIONS_FOR_MINI=$CONDITIONS
     CONDITIONS_FOR_NANO=102X_mc2017_realistic_v8
     BEAMSPOT=Realistic25ns13TeVEarly2017Collision
     CAMPAIGN=RunIIFall17
@@ -91,10 +109,17 @@ case "$YEAR" in
     MINIERA=$ERA,run2_miniAOD_94XFall17
     NANOERA=$ERA,run2_nanoAOD_94XMiniAODv2
     PREMIX_STEP=DIGIPREMIX_S2,DATAMIX,L1,DIGI2RAW,HLT:2e34v40
+    RECO_STEP=RAW2DIGI,L1Reco,RECO,RECOSIM,EI
     CMSSW_VERSION_FOR_RECO=CMSSW_9_4_17
+    CMSSW_VERSION_FOR_MINI=CMSSW_9_4_17
+    CMSSW_VERSION_FOR_NANO=CMSSW_10_2_22
     ;;
 2018)  echo "The year is $YEAR"
     CONDITIONS=102X_upgrade2018_realistic_v20
+    CONDITIONS_FOR_GEN=$CONDITIONS
+    CONDITIONS_FOR_PREMIX=$CONDITIONS
+    CONDITIONS_FOR_RECO=$CONDITIONS
+    CONDITIONS_FOR_MINI=$CONDITIONS
     CONDITIONS_FOR_NANO=102X_upgrade2018_realistic_v20
     BEAMSPOT=Realistic25ns13TeVEarly2018Collision
     CAMPAIGN=RunIIAutumn18
@@ -102,9 +127,12 @@ case "$YEAR" in
     MINIERA=$ERA
     NANOERA=$ERA,run2_nanoAOD_102Xv1
     PREMIX_STEP=DIGI,DATAMIX,L1,DIGI2RAW,HLT:@relval$YEAR
+    RECO_STEP=RAW2DIGI,L1Reco,RECO,RECOSIM,EI
     PREMIX_ARGS="--procModifiers premix_stage2 --geometry DB:Extended"
     RECO_ARGS="--procModifiers premix_stage2"
     CMSSW_VERSION_FOR_RECO=CMSSW_10_2_22
+    CMSSW_VERSION_FOR_MINI=CMSSW_10_2_22
+    CMSSW_VERSION_FOR_NANO=CMSSW_10_2_22
     ;;
 *) echo "Year $YEAR is not valid, did you forget to specify it with the -y option?"
    exit 1
@@ -125,9 +153,6 @@ else
       fi
 fi
 
-
-CMSSW_VERSION_FOR_GEN_NANO=CMSSW_10_2_22
-
 # The following part should not be manually configured
 
 FRAGMENT_BASE_URL=https://raw.githubusercontent.com/guitargeek/vvv-eft-sample-production/master/genproduction-fragments
@@ -147,12 +172,12 @@ mkdir -p $OUTPUT_DIR
 cd $OUTPUT_DIR
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-if [ -r $CMSSW_VERSION_FOR_GEN_NANO/src ] ; then
- echo release $CMSSW_VERSION_FOR_GEN_NANO already exists
+if [ -r $CMSSW_VERSION_FOR_NANO/src ] ; then
+ echo release $CMSSW_VERSION_FOR_NANO already exists
 else
-scram p CMSSW $CMSSW_VERSION_FOR_GEN_NANO
+scram p CMSSW $CMSSW_VERSION_FOR_NANO
 fi
-cd $CMSSW_VERSION_FOR_GEN_NANO/src
+cd $CMSSW_VERSION_FOR_NANO/src
 eval `scram runtime -sh`
 
 # Patch to have the improved weight producer for NanoAOD
@@ -203,7 +228,7 @@ cmsDriver.py Configuration/GenProduction/python/$FRAGMENT \
     --mc \
     --eventcontent RAWSIM,LHE \
     --datatier GEN-SIM,LHE \
-    --conditions $CONDITIONS \
+    --conditions $CONDITIONS_FOR_GEN \
     --beamspot $BEAMSPOT \
     --step LHE,GEN,SIM \
     --geometry DB:Extended \
@@ -224,7 +249,7 @@ cmsDriver.py step1 \
     --mc \
     --eventcontent PREMIXRAW \
     --datatier GEN-SIM-RAW \
-    --conditions $CONDITIONS \
+    --conditions $CONDITIONS_FOR_PREMIX \
     --step $PREMIX_STEP \
     $PREMIX_ARGS \
     --nThreads $NTHREADS \
@@ -244,8 +269,8 @@ cmsDriver.py step2 \
     --eventcontent AODSIM \
     --runUnscheduled \
     --datatier AODSIM \
-    --conditions $CONDITIONS \
-    --step RAW2DIGI,L1Reco,RECO,RECOSIM,EI \
+    --conditions $CONDITIONS_FOR_RECO \
+    --step $RECO_STEP \
     $RECO_ARGS \
     --nThreads $NTHREADS \
     --era $ERA \
@@ -256,6 +281,14 @@ cmsDriver.py step2 \
 
 python2 ${STEP2_NAME}_cfg.py
 
+# checkout cmssw version for mini
+mkdir cmssw_for_mini
+cd cmssw_for_mini
+cmsrel $CMSSW_VERSION_FOR_MINI
+cd $CMSSW_VERSION_FOR_MINI/src
+cmsenv
+cd ../../..
+
 cmsDriver.py step1 \
     --filein file:${STEP2_NAME}.root \
     --fileout file:${STEP3_NAME}.root \
@@ -263,7 +296,7 @@ cmsDriver.py step1 \
     --eventcontent MINIAODSIM \
     --runUnscheduled \
     --datatier MINIAODSIM \
-    --conditions $CONDITIONS \
+    --conditions $CONDITIONS_FOR_MINI \
     --step PAT \
     --nThreads $NTHREADS \
     --geometry DB:Extended \
@@ -276,7 +309,7 @@ cmsDriver.py step1 \
 python2 ${STEP3_NAME}_cfg.py
 
 # set gen/nano environment
-cd $CMSSW_VERSION_FOR_GEN_NANO/src
+cd $CMSSW_VERSION_FOR_NANO/src
 cmsenv
 cd ../..
 
@@ -287,7 +320,7 @@ cmsDriver.py step1 \
     --mc \
     --eventcontent NANOEDMAODSIM \
     --datatier NANOAODSIM \
-    --conditions $CONDITIONS \
+    --conditions $CONDITIONS_FOR_NANO \
     --step NANO \
     --nThreads $NTHREADS \
     --era $NANOERA \
@@ -337,10 +370,16 @@ rm -rf lheevent
 
 cmsRun ${STEP1_NAME}_cfg.py || exit $? ;
 cmsRun ${STEP2_NAME}_cfg.py || exit $? ;
+
+# set mini environment
+cd cmssw_for_mini/$CMSSW_VERSION_FOR_MINI/src
+cmsenv
+cd ../../..
+
 cmsRun ${STEP3_NAME}_cfg.py || exit $? ;
 
-# set gen/nano environment
-cd $CMSSW_VERSION_FOR_GEN_NANO/src
+# set nano environment
+cd $CMSSW_VERSION_FOR_NANO/src
 cmsenv
 cd ../..
 
@@ -353,7 +392,8 @@ then
     # The full event after the premixig before recuding it to AOD is too large and too easy to recalculate to justify saving it
     rm ${STEP1_NAME}.root
 
-    rm -rf $CMSSW_VERSION_FOR_GEN_NANO
-    rm -rf $CMSSW_VERSION_FOR_RECO
+    rm -rf $CMSSW_VERSION_FOR_NANO
+    rm -rf cmssw_for_reco
+    rm -rf cmssw_for_mini
     rm -rf *_cfg.py
 fi
