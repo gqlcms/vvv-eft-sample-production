@@ -39,12 +39,20 @@ process.source = cms.Source(
     fileNames=cms.untracked.vstring(infiles),
     duplicateCheckMode=cms.untracked.string("noDuplicateCheck"),  # default: checkAllFilesOpened
 )
-process.Merged = cms.OutputModule(
-    "NanoAODOutputModule",
-    fileName=cms.untracked.string(outfile),
-    compressionAlgorithm=nano_event_content.compressionAlgorithm,
-    compressionLevel=nano_event_content.compressionLevel,
-    outputCommands=nano_event_content.outputCommands,
+
+process.Merged = cms.OutputModule("NanoAODOutputModule",
+    compressionAlgorithm = cms.untracked.string('LZMA'),
+    compressionLevel = cms.untracked.int32(9),
+    fileName = cms.untracked.string(outfile),
+    outputCommands = cms.untracked.vstring(
+        'drop *', 
+        'keep *_lheWeightsTable_*_*', 
+        'keep nanoaodFlatTable_*Table_*_*', 
+        'keep edmTriggerResults_*_*_*', 
+        'keep String_*_genModel_*', 
+        'keep nanoaodMergeableCounterTable_*Table_*_*', 
+        'keep nanoaodUniqueString_nanoMetadata_*_*'
+    )
 )
 
 process.InitRootHandlers = cms.Service("InitRootHandlers", EnableIMT=cms.untracked.bool(False))
